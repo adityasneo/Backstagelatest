@@ -1,0 +1,35 @@
+# User Docs: https://backstage.prod.platform-eng.aws-ew1.pr.williamhill.plc/docs/default/component/engineering-portal/onboarding/software-catalog/
+
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: ${{values.component_id | dump}}
+  description: ${{values.description | dump}}
+  tags: ${{values.tags | dump}}
+  # We are still working to support adding links via the Template.
+  # links:
+  #   - title:
+  #   - url:
+  #   - icon:
+  annotations:
+    github.com/project-slug: ${{values.destination.owner + "/" + values.destination.repo}}
+    backstage.io/techdocs-ref: dir:.
+    github.com/project-id: ${{ values.projectid | dump }}
+spec:
+  type: ${{values.component_type | dump}}
+  lifecycle: ${{values.component_lifecycle | dump}}
+  owner: ${{values.owner | dump}}
+  # The following are optional metadata parameters.
+
+  # system: [value]
+  # providesApis:
+  #   - [api 1]
+  #   - [api 2]
+  #   - [api 3]
+  # consumesApis:
+  #   - [api 1]
+  #   - [api 2]
+  #   - [api 3]
+  # dependsOn:
+  #   - Component:[value]
+  #   - Resource:[value]

@@ -1,0 +1,132 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: component
+  title: Backstage Component
+  description: Create a Backstage descriptor to catalog your Component (GitLab Repositories)
+  tags:
+    - component
+    - backstage
+    - software-catalog
+spec:
+  owner: team-sneo
+  type: backstage-catalog
+
+  parameters:
+    - title: Fill in details about your Software Catalog for Component
+      required:
+        - component_id
+        - component_type
+        - component_lifecycle
+        - description
+        - owner
+        - tags
+      properties:
+        component_id:
+          title: Name
+          type: string
+          description: Unique name for Catalog in the Engineering Portal.
+        component_type:
+          title: Type
+          type: string
+          description: Specification Type of Component
+          enum:
+            - "website"
+            - "library"
+            - "service"
+        component_lifecycle:
+          title: LifeCycle
+          type: string
+          description: LifeCycle of Component
+          enum:
+            - "playground"
+            - "experimental"
+            - "production"
+        tags:
+          type: array
+          description: https://backstage.prod.platform-eng.aws-ew1.pr.williamhill.plc/docs/default/component/engineering-portal/onboarding/recommend-tags/
+          items:
+            type: string
+          ui:options:
+            orderable: false
+        description:
+          title: Description
+          default: "Lorem ipsum dolor sit amet..."
+          type: string
+          description: Help others understand what this Component is for.
+        owner:
+          title: Owner
+          type: string
+          description: Owner of the component
+          ui:field: OwnerPicker
+          ui:options:
+            allowedKinds:
+              - Group
+
+    - title: Let's know more about your GitLab Repository to generate this Merge Request
+      required:
+        - repoUrl
+        - branchName
+      properties:
+        repoUrl:
+          title: Repository Location
+          type: string
+          ui:field: RepoUrlPicker
+          ui:options:
+            allowedHosts:
+              - github.com
+            requestUserCredentials:
+              secretsKey: USER_OAUTH_TOKEN
+        merge_request_title:
+          title: Merge Request Title
+          default: Backstage Catalog Descriptor
+          type: string
+        assignee:
+          title: MR Assignee
+          type: string
+          description: Github Handle of the Assignee
+        targetPath:
+          title: Target Path in the Repository
+          type: string
+          description: Name of the directory to create in the repository
+        branchName:
+          title: Destination Branch Name
+          type: string
+          description: Branch name for the Merge Request. Please don't keep this same as your default branch name.
+
+  steps:
+    - id: template
+      name: Fetch Skeleton + Template
+      action: fetch:template
+      input:
+        url: ./template
+        targetPath: ${{ parameters.targetPath }}
+        values:
+          component_id: ${{ parameters.component_id }}
+          component_type: ${{ parameters.component_type }}
+          component_lifecycle: ${{ parameters.component_lifecycle }}
+          tags: ${{ parameters.tags }}
+          description: ${{ parameters.description }}
+          owner: ${{ parameters.owner }}
+          destination: ${{ parameters.repoUrl | parseRepoUrl }}
+          projectid: ${{ parameters.gitlab_project }}
+
+    - id: publish
+      name: Creating Merge Request
+      action: publish:github:merge-request
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+        title: ${{ parameters.merge_request_title }}
+        branchName: ${{ parameters.branchName }}
+        description: |
+          ${{ parameters.description if parameters.description }}
+        targetPath: ${{ parameters.targetPath if parameters.targetPath else '.' }}
+        token: ${{ secrets.USER_OAUTH_TOKEN }}
+        assignee: ${{ parameters.assignee }}
+        removeSourceBranch: true
+
+  output:
+    links:
+      - title: View Merge Request in Github
+        url: ${{ steps.publish.output.mergeRequestUrl }}
+        icon: github
